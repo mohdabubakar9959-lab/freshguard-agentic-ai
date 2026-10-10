@@ -1,0 +1,143 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>FreshGuard: perishables waste agents</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eaf0ee;--card:#fff;--ink:#12302f;--mut:#5d7472;--line:#d3dedb;--ok:#2b7a4b;--warn:#c98512;--bad:#a3204f;--pri:#12302f;--pt:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1b1a;--card:#162826;--ink:#e6f0ed;--mut:#8fa8a4;--line:#27403c;--ok:#5cc58a;--warn:#e3a93c;--bad:#ef6f98;--pri:#e6f0ed;--pt:#0e1b1a}}
+:root[data-theme="dark"]{--bg:#0e1b1a;--card:#162826;--ink:#e6f0ed;--mut:#8fa8a4;--line:#27403c;--ok:#5cc58a;--warn:#e3a93c;--bad:#ef6f98;--pri:#e6f0ed;--pt:#0e1b1a}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 'Bricolage Grotesque',system-ui,sans-serif}
+h1{font-size:28px;margin:0 0 4px;font-weight:800}h2{font-size:18px;margin:0 0 10px;font-weight:800}
+.m{color:var(--mut);font-size:13px}.err{color:var(--bad);min-height:20px;margin:6px 0}
+header{display:flex;gap:12px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line)}header b{font-size:18px;flex:1}
+nav{display:flex;gap:4px;overflow-x:auto;padding:8px 12px;border-bottom:1px solid var(--line)}
+nav button{white-space:nowrap;border:0;background:none;color:var(--mut);padding:8px 12px;font:inherit;font-weight:600;border-bottom:3px solid transparent;cursor:pointer}
+nav button.on{color:var(--ink);border-color:var(--bad)}
+main{padding:16px;max-width:1100px;margin:auto}.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:14px}
+.auth{max-width:380px;margin:12vh auto 0}label{display:block;font-weight:600;font-size:13px;margin:10px 0 0}
+input,select{width:100%;padding:9px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 14px;border-radius:6px;font-weight:600}
+button.pri{background:var(--pri);color:var(--pt);border-color:var(--pri)}button.lnk{border:0;background:none;color:var(--mut);text-decoration:underline}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0 12px}.sc{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}td,th{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}th{font-weight:600;color:var(--mut)}
+.b{display:inline-block;padding:1px 8px;border-radius:10px;font-size:12px;font-weight:600;background:var(--line)}
+.b.ok,.b.reorder{background:var(--ok);color:#fff}.b.warn,.b.markdown{background:var(--warn);color:#fff}.b.bad,.b.donate{background:var(--bad);color:#fff}.b.transfer{background:#3a6fb0;color:#fff}
+.kp{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:14px}.kp div{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px}.kp b{font-size:24px;display:block}
+.act{display:flex;gap:14px;justify-content:space-between;flex-wrap:wrap;padding:12px 0;border-bottom:1px solid var(--line)}.act.rejected{opacity:.5}.ctl{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.ctl input{width:80px}.ctl select{width:150px}
+.est{margin-top:12px;padding:12px;border-left:4px solid var(--ok);background:var(--bg)}.est ul{margin:6px 0 10px;padding-left:18px}
+.bar{height:10px;border-radius:5px;background:var(--bad);min-width:2px}.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+pre{margin:0;font:12px/1.5 ui-monospace,monospace;white-space:pre-wrap;word-break:break-word;max-height:280px;overflow:auto}
+</style></head><body><div id="app"></div><script>
+const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),now=()=>new Date().toLocaleTimeString(),hs=s=>[...s].reduce((a,c)=>a*31+c.charCodeAt(0)|0,7);
+function rng(s){return()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const STORES=['Downtown','Suburb','Campus'],SC=[1,.8,1.2],DAYS=74,TR=60,DOW=[1,.9,.9,.95,1.1,1.3,1.2];
+let SKUS=[{id:'MLK',name:'Milk 1L',cat:'Dairy',shelf:7,price:1.2,cost:.8,base:40,wx:0,pr:.35,ev:.15},{id:'BAN',name:'Bananas 1kg',cat:'Produce',shelf:5,price:1.5,cost:.9,base:30,wx:.01,pr:.4,ev:.1},{id:'CHK',name:'Chicken breast',cat:'Meat & Fish',shelf:3,price:6,cost:4,base:18,wx:.025,pr:.5,ev:.3},{id:'SAL',name:'Salad mix',cat:'Produce',shelf:4,price:2.5,cost:1.5,base:14,wx:.03,pr:.45,ev:.1},{id:'YOG',name:'Yogurt 4-pack',cat:'Dairy',shelf:12,price:2.8,cost:1.8,base:22,wx:.01,pr:.4,ev:.1},{id:'BRD',name:'Bread loaf',cat:'Bakery',shelf:4,price:2,cost:1.1,base:26,wx:-.005,pr:.3,ev:.2}];
+let CFG={riskTh:.25,maxMd:35,donDays:1,minXfer:8,cover:2,buf:1.05,cap:200};
+let W,EV,SER,ACT,TRACE,DEC={},LOG={erp:[],wms:[],pos:[],dec:[],fb:[]},me=null,tab='inv',est0=null,authMode='in',msg='',USERS={};
+try{USERS=JSON.parse(localStorage.getItem('fg_users')||'{}')}catch(e){}
+function fit(X,y){const n=X[0].length,A=Array.from({length:n},()=>Array(n+1).fill(0));
+ X.forEach((r,t)=>{for(let i=0;i<n;i++){for(let j=0;j<n;j++)A[i][j]+=r[i]*r[j];A[i][n]+=r[i]*y[t]}});
+ for(let i=1;i<n;i++)A[i][i]+=1;
+ for(let i=0;i<n;i++){let p=i;for(let r=i+1;r<n;r++)if(Math.abs(A[r][i])>Math.abs(A[p][i]))p=r;[A[i],A[p]]=[A[p],A[i]];for(let r=0;r<n;r++)if(r!=i){const f=A[r][i]/A[i][i];for(let c=i;c<=n;c++)A[r][c]-=f*A[i][c]}}
+ return A.map((r,i)=>r[n]/r[i])}
+const feat=(s,d)=>[1,...[1,2,3,4,5,6].map(j=>d%7==j?1:0),W[d]-20,s.pr[d],s.ev[d]];
+const f=(s,d)=>Math.max(0,feat(s,Math.min(d,DAYS-1)).reduce((a,x,i)=>a+x*s.beta[i],0));
+const cum=(s,d,r)=>{let t=0;for(let i=0;i<r;i++)t+=f(s,d+i);return t};
+const ma7=(s,d)=>{let t=0;for(let i=1;i<=7;i++)t+=s.sales[d-i];return t/7};
+function gen(){const R=rng(11);W=Array.from({length:DAYS},(_,d)=>+(20+7*Math.sin(d/8)+(R()-.5)*4).toFixed(1));
+ EV=STORES.map(()=>Array.from({length:DAYS},()=>R()<.1?1:0));SER=[];
+ STORES.forEach((_,si)=>SKUS.forEach(k=>{if(k.only!=null&&k.only!=si)return;
+  const r=rng(hs(k.id)+si*97),pr=[],sales=[];
+  for(let d=0;d<DAYS;d++){const p=r()<.12?1:0;pr.push(p);sales.push(Math.max(0,Math.round(k.base*SC[si]*DOW[d%7]*(1+k.wx*(W[d]-20))*(1+k.pr*p)*(1+k.ev*EV[si][d])*(1+(r()-.5)*.24))))}
+  const inv0=k.inv?[{q:k.inv.q,age:k.inv.age}]:[{q:Math.round(k.base*SC[si]*(.6+r()*1.4)),age:Math.floor(r()*k.shelf*.8)},{q:Math.round(k.base*SC[si]*(.5+r())),age:Math.floor(r()*2)}];
+  const s={si,k,pr,sales,ev:EV[si],inv0};s.beta=fit(Array.from({length:TR},(_,d)=>feat(s,d)),sales.slice(0,TR));SER.push(s)}))}
+function acc(){const a={n:0,m:0,e:0,y:0};SER.forEach(s=>{for(let d=TR;d<DAYS;d++){a.y+=s.sales[d];a.n+=Math.abs(s.sales[d]-s.sales[d-7]);a.m+=Math.abs(s.sales[d]-ma7(s,d));a.e+=Math.abs(s.sales[d]-f(s,d))}});return{naive:a.n/a.y,ma7:a.m/a.y,model:a.e/a.y}}
+function risk(s){const B=s.inv0.map(b=>({...b})).sort((x,y)=>y.age-x.age);let a=0;return B.map(b=>{const r=Math.max(0,s.k.shelf-b.age),F=cum(s,TR,r)*.92,w=Math.min(b.q,Math.max(0,a+b.q-F));a+=b.q;return{...b,rem:r,w,risk:b.q?w/b.q:0}})}
+function agents(){const P=[];
+ SER.forEach(s=>{const k=s.k,R=risk(s),lab=STORES[s.si];
+  R.forEach((b,i)=>{if(b.risk<CFG.riskTh||b.w<1)return;const w=Math.round(b.w),id=`${lab}-${k.id}-b${i}`;let done=false;
+   if(b.rem>=2)STORES.forEach((_,o)=>{if(done||o==s.si)return;const t=SER.find(x=>x.si==o&&x.k.id==k.id);if(!t)return;
+    const fresh=t.inv0.filter(x=>t.k.shelf-x.age>=3).reduce((a,x)=>a+x.q,0),def=Math.round(cum(t,TR,3)-fresh);
+    if(def>=CFG.minXfer){const q=Math.min(w,def);P.push({id:id+'-xfer',agent:'Redistribution agent',type:'transfer',s,k,q,to:STORES[o],value:q*k.price*.9,why:`${w} units at ${Math.round(b.risk*100)}% spoilage risk; ${STORES[o]} is short by about ${def} units`,conf:.8});done=true}});
+   if(!done&&b.rem<=CFG.donDays){P.push({id:id+'-don',agent:'Redistribution agent',type:'donate',s,k,q:w,value:w*k.cost*.5,why:`${b.rem} day left, ${w} units will not sell; donate to a food bank`,conf:.85});done=true}
+   if(!done&&b.rem>CFG.donDays){const cap=Math.floor((1-k.cost*1.02/k.price)*100),d=Math.min(CFG.maxMd,cap,Math.ceil(b.risk*60/5)*5);
+    if(d>=5){const ex=Math.min(w,Math.round(w*Math.min(.8,d/40)));P.push({id:id+'-md',agent:'Markdown agent',type:'markdown',s,k,disc:d,q:ex,value:ex*k.price*(1-d/100),why:`${Math.round(b.risk*100)}% spoilage risk with ${b.rem}d left; ${d}% off should recover about ${ex} units (price floor keeps margin)`,conf:.7+.2*b.risk})}}});
+  const surv=Math.max(0,s.inv0.reduce((a,b)=>a+b.q,0)-R.reduce((a,b)=>a+b.w,0)-f(s,TR)),q=Math.min(CFG.cap,Math.ceil(CFG.buf*cum(s,TR+1,CFG.cover)-surv));
+  if(q>0)P.push({id:`${lab}-${k.id}-po`,agent:'Replenishment agent',type:'reorder',s,k,q,value:q*(k.price-k.cost),why:`forecast ${CFG.cover}-day demand is ${Math.round(cum(s,TR+1,CFG.cover))}; about ${Math.round(surv)} units will still be sellable`,conf:.8})});
+ return P.sort((a,b)=>b.value-a.value)}
+function run(){ACT=agents();const a=acc(),B=SER.flatMap(s=>risk(s)).filter(b=>b.risk>=CFG.riskTh&&b.w>=1);
+ TRACE=[`Forecast agent: ${SER.length} store and SKU series, holdout WAPE ${(a.model*100).toFixed(1)}% (naive ${(a.naive*100).toFixed(1)}%, 7-day average ${(a.ma7*100).toFixed(1)}%)`,`Spoilage agent: ${B.length} batches at or above ${Math.round(CFG.riskTh*100)}% risk, ${Math.round(B.reduce((t,b)=>t+b.w,0))} units`,`Orchestrator: one action per batch (transfer, then donate, then markdown), reorders net of expected waste; ${ACT.length} proposals`]}
+function boot(){gen();run()}
+const sim=p=>{const T={w:0,lost:0,sold:0,dem:0,gm:0,rcv:0};
+ SER.forEach(s=>{const k=s.k,S=k.shelf;let B=s.inv0.map(b=>({...b})),pend=0;T.rcv+=B.reduce((a,b)=>a+b.q,0);
+  for(let d=TR;d<DAYS;d++){if(pend>0){B.push({q:pend,age:0});T.rcv+=pend;pend=0}
+   B.sort((x,y)=>y.age-x.age);const tot=B.reduce((a,b)=>a+b.q,0);let disc=0;
+   if(p=='B'&&B.some(b=>S-b.age<=2))disc=.3;
+   if(p=='C'){let a=0,w=0;B.forEach(b=>{const F=cum(s,d,S-b.age)*.92;w+=Math.min(b.q,Math.max(0,a+b.q-F));a+=b.q});
+    if(tot&&w/tot>CFG.riskTh)disc=Math.min(CFG.maxMd/100,Math.floor((1-k.cost*1.02/k.price)*100)/100,Math.ceil(w/tot*60/5)*.05)}
+   const dem=Math.round(s.sales[d]*(1+1.2*disc));let need=dem;
+   for(const b of B){const x=Math.min(b.q,need);b.q-=x;need-=x;T.sold+=x;T.gm+=x*(k.price*(1-disc)-k.cost)}
+   T.dem+=dem;T.lost+=need;B.forEach(b=>b.age++);
+   B=B.filter(b=>{if(b.q<=0)return false;if(b.age>=S){T.w+=b.q;T.gm-=b.q*k.cost;return false}return true});
+   if(d<DAYS-1){const left=B.reduce((a,b)=>a+b.q,0),tg=p=='A'?s.sales[d-6]:p=='B'?ma7(s,d+1)*1.1:f(s,d+1)*CFG.buf;pend=Math.max(0,Math.ceil(tg-left));if(p=='C')pend=Math.min(pend,CFG.cap)}}});
+ return T};
+const KB=[['milk',7],['yogurt',18],['yoghurt',18],['curd',6],['paneer',7],['cheese',30],['butter',60],['egg',28],['lettuce',5],['spinach',5],['salad',4],['banana',5],['tomato',7],['apple',25],['berr',4],['mango',5],['chicken',3],['mutton',3],['beef',3],['mince',2],['fish',2],['prawn',2],['bread',4],['bun',3],['cake',3],['sandwich',2],['juice',10]],CAT={Dairy:10,Produce:6,'Meat & Fish':3,Bakery:4,'Ready meals':3};
+function est(name,cat,st,pk,ago){const n=name.toLowerCase(),m=KB.find(x=>n.includes(x[0])),base=m?m[1]:CAT[cat],why=[m?`matched "${m[0]}": ${base} days under ideal storage`:`no keyword match, using ${cat} default of ${base} days`],chill=cat!='Bakery'&&!/banana|apple|mango/.test(n);let fc=1,p=1;
+ if(st=='Ambient'&&chill){fc=.3;why.push('chilled item kept ambient: x0.3')}else if(st=='Cool room'&&chill){fc=.75;why.push('cool room (5 to 12°C): x0.75')}else if(st=='Frozen'){fc=cat=='Meat & Fish'||cat=='Bakery'?6:4;why.push(`frozen: x${fc}`)}
+ if(pk=='Opened / loose'){p=.6;why.push('opened or loose: x0.6')}else if(pk=='Vacuum / MAP'){p=cat=='Dairy'||cat=='Bakery'?1.1:1.4;why.push(`vacuum or MAP: x${p}`)}
+ const days=Math.max(1,Math.round(base*fc*p));return{days,lo:Math.max(1,Math.floor(days*.8)),hi:Math.ceil(days*1.2),rem:Math.max(0,days-ago),conf:Math.max(.3,(m?.88:.55)-(pk=='Opened / loose'?.1:0)-(st=='Frozen'?.05:0)),why}}
+function doEst(){const n=$('#fn').value.trim();if(!n){$('#res').innerHTML='<p class="err">Enter a product name.</p>';return}
+ const e=est0=est(n,$('#fc').value,$('#fs').value,$('#fp').value,+$('#fa').value||0);
+ $('#res').innerHTML=`<div class="est"><b>${e.days} days shelf life</b> (range ${e.lo} to ${e.hi}), ${e.rem} days remaining, confidence ${Math.round(e.conf*100)}%<ul>${e.why.map(x=>`<li>${x}</li>`).join('')}</ul><button class="pri" onclick="addItem()">Add to inventory and run agents</button></div>`}
+function addItem(){const e=est0,q=+$('#fq').value,pr=+$('#fpr').value;if(!e||!(q>0)||!(pr>0)){$('#res').innerHTML+='<p class="err">Enter a quantity and price above zero.</p>';return}
+ SKUS.push({id:'U'+(SKUS.length+1),name:$('#fn').value.trim(),cat:$('#fc').value,shelf:e.days,price:pr,cost:+(pr*.65).toFixed(2),base:+$('#fd').value||20,wx:.01,pr:.4,ev:.15,only:+$('#fst').value,inv:{q,age:Math.min(+$('#fa').value||0,e.days-1)}});est0=null;boot();render()}
+function decide(i,m){const a=ACT[i],fl=a.type=='markdown'?'disc':'q',o=a[fl],v=+$('#in'+i).value,sel=$('#rs'+i),r=sel.selectedIndex?sel.value:'none given',lab=STORES[a.s.si];
+ if(m=='no'){DEC[a.id]={st:'rejected'};let n='';if(a.type=='markdown'){CFG.riskTh=Math.min(.6,+(CFG.riskTh+.02).toFixed(2));n=`; risk threshold nudged to ${CFG.riskTh}`}
+  LOG.dec.unshift(`${now()} ${a.id} REJECTED by ${me}`);LOG.fb.unshift(`${now()} ${a.id}: rejected, reason "${r}"${n}`)}
+ else{const mod=v!=o;a[fl]=v;DEC[a.id]={st:mod?'modified':'approved'};
+  const P={markdown:['pos',`PUT /pos/prices {store:"${lab}",sku:"${a.k.id}",discount_pct:${a.disc},valid:"today"}`],reorder:['erp',`POST /erp/purchase-orders {store:"${lab}",sku:"${a.k.id}",qty:${a.q},eta:"D+1"}`],transfer:['wms',`POST /wms/transfers {from:"${lab}",to:"${a.to}",sku:"${a.k.id}",qty:${a.q}}`],donate:['wms',`POST /wms/tasks {type:"donation",store:"${lab}",sku:"${a.k.id}",qty:${a.q}}`]}[a.type];
+  LOG[P[0]].unshift(`${now()} ${P[1]} 200 OK`);if(a.type=='donate')LOG.erp.unshift(`${now()} POST /erp/write-offs {sku:"${a.k.id}",qty:${a.q},reason:"donation"} 200 OK`);
+  LOG.dec.unshift(`${now()} ${a.id} ${DEC[a.id].st.toUpperCase()} by ${me}`);LOG.fb.unshift(`${now()} ${a.id}: ${mod?`planner changed ${fl} from ${o} to ${v}`:'accepted as proposed'}`)}
+ render()}
+function setC(k,v){CFG[k]=+v;run();render()}
+const hash=async(p,e)=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(e+'|'+p)))].map(x=>x.toString(16).padStart(2,'0')).join('');
+async function auth(){const e=$('#ae').value.trim().toLowerCase(),p=$('#ap').value;msg='';
+ if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e))msg='Enter a valid email address.';
+ else if(authMode=='up'){const n=$('#an').value.trim();
+  if(!n)msg='Enter your shop name.';else if(p.length<8||!/[a-z]/i.test(p)||!/\d/.test(p))msg='Password needs 8 or more characters, with a letter and a number.';else if(p!=$('#ac').value)msg='Passwords do not match.';else if(USERS[e])msg='An account with this email already exists. Sign in instead.';
+  else{USERS[e]={n,h:await hash(p,e)};try{localStorage.setItem('fg_users',JSON.stringify(USERS))}catch(x){}me=e}}
+ else{const u=USERS[e];if(!u||u.h!=await hash(p,e))msg='Email or password is incorrect.';else me=e}
+ if(me){boot();tab='inv'}render()}
+document.addEventListener('keydown',e=>{if(e.key=='Enter'&&!me&&$('#ae'))auth()});
+const badge=p=>`<span class="b ${p>.5?'bad':p>CFG.riskTh?'warn':'ok'}">${Math.round(p*100)}%</span>`,sel=(id,o)=>`<select id="${id}">${o.map(x=>`<option>${x}</option>`).join('')}</select>`;
+const V={
+inv(){const rows=SER.map(s=>{const R=risk(s),t=R.reduce((a,b)=>a+b.q,0),w=R.reduce((a,b)=>a+b.w,0);return`<tr><td>${STORES[s.si]}</td><td>${esc(s.k.name)}</td><td>${t}</td><td>${Math.min(...R.map(b=>b.rem))} days</td><td>${badge(t?w/t:0)}</td></tr>`}).join('');
+ return`<div class="card"><h2>Add a perishable</h2><p class="m">The estimator combines a product knowledge base with storage and packaging adjustments. New items get a synthetic sales history until real POS data arrives.</p>
+ <div class="grid"><label>Product name<input id="fn" placeholder="e.g. Paneer 200g"></label><label>Category${sel('fc',Object.keys(CAT))}</label><label>Storage${sel('fs',['Chilled','Cool room','Ambient','Frozen'])}</label><label>Packaging${sel('fp',['Sealed','Opened / loose','Vacuum / MAP'])}</label>
+ <label>Days since received<input id="fa" type="number" min="0" value="0"></label><label>Quantity on hand<input id="fq" type="number" min="1" value="30"></label><label>Unit price<input id="fpr" type="number" min="0.1" step="0.1" value="2"></label><label>Typical units sold per day<input id="fd" type="number" min="1" value="20"></label>
+ <label>Store<select id="fst">${STORES.map((s,i)=>`<option value="${i}">${s}</option>`).join('')}</select></label></div>
+ <p><button class="pri" onclick="doEst()">Estimate shelf life</button></p><div id="res"></div></div>
+ <div class="card"><h2>Inventory today</h2><div class="sc"><table><tr><th>Store</th><th>Product</th><th>Units</th><th>Shortest life left</th><th>Spoilage risk</th></tr>${rows}</table></div></div>`},
+plan(){const open=ACT.filter(a=>!DEC[a.id]).length,v=SER.reduce((t,s)=>t+risk(s).reduce((a,b)=>a+b.w*s.k.cost,0),0),rec=ACT.filter(a=>!DEC[a.id]&&a.type!='reorder').reduce((t,a)=>t+a.value,0);
+ const rows=ACT.map((a,i)=>{const d=DEC[a.id],ed=a.type=='markdown'?['disc','% off']:['q','units'];
+  return`<div class="act ${d?d.st:''}"><div style="flex:1;min-width:240px"><span class="b ${a.type}">${a.type}</span> <b>${esc(a.k.name)}</b>, ${STORES[a.s.si]}${a.to?' to '+a.to:''}<br><span class="m">${a.agent}, confidence ${Math.round(a.conf*100)}%, value about $${a.value.toFixed(0)}</span><br>${a.why}</div>
+  <div class="ctl">${d?`<b>${d.st}</b>`:`<input id="in${i}" type="number" min="0" value="${a[ed[0]]}" aria-label="${ed[1]}"><span class="m">${ed[1]}</span><select id="rs${i}"><option>Reason if rejecting</option><option>Stock count is wrong</option><option>Promo already planned</option><option>Low confidence</option></select><button class="pri" onclick="decide(${i},'ok')">Approve</button><button onclick="decide(${i},'no')">Reject</button>`}</div></div>`}).join('');
+ return`<div class="kp"><div><b>${open}</b>actions awaiting review</div><div><b>$${v.toFixed(0)}</b>stock cost at risk</div><div><b>$${rec.toFixed(0)}</b>recoverable if approved</div></div>
+ <div class="card"><h2>Orchestrator trace</h2>${TRACE.map(t=>`<p class="m" style="margin:3px 0">${t}</p>`).join('')}</div><div class="card"><h2>Proposed actions</h2>${rows||'<p class="m">No actions. Add stock or lower the risk threshold in Rules.</p>'}</div>`},
+mod(){const a=acc(),n=SER.length,r=[['Sales history',n*TR],['Inventory batches',SER.reduce((t,s)=>t+s.inv0.length,0)],['Receipt lines',Math.round(SER.reduce((t,s)=>t+s.sales.slice(0,TR).reduce((x,y)=>x+y,0),0)/2.4)],['Prices',n*DAYS],['Promotions',SER.reduce((t,s)=>t+s.pr.reduce((x,y)=>x+y,0),0)],['Waste ledger',n*TR],['Shelf life',n],['Weather',DAYS],['Local events',EV.flat().reduce((x,y)=>x+y,0)]],ok=SER.every(s=>s.sales.every(x=>x>=0));
+ return`<div class="card"><h2>Ingestion workflow</h2><p class="m">Extract synthetic feeds, validate, join on store, SKU and date, then split days 1 to ${TR} for training and the last ${DAYS-TR} for holdout.</p><div class="sc"><table><tr><th>Source</th><th>Rows</th><th>Checks</th></tr>${r.map(x=>`<tr><td>${x[0]}</td><td>${x[1]}</td><td>${ok?'passed: no negatives, no duplicate keys':'review needed'}</td></tr>`).join('')}</table></div></div>
+ <div class="card"><h2>Forecast accuracy on holdout (WAPE, lower is better)</h2><p>Seasonal naive ${(a.naive*100).toFixed(1)}%, 7-day average ${(a.ma7*100).toFixed(1)}%, regression model with weather, promotion and event features <b>${(a.model*100).toFixed(1)}%</b>.</p></div>
+ <div class="card"><h2>Forecast and spoilage risk by store</h2><div class="sc"><table><tr><th>Store</th><th>Product</th><th>Next 3 days (units)</th><th>Batch risk</th></tr>${SER.map(s=>`<tr><td>${STORES[s.si]}</td><td>${esc(s.k.name)}</td><td>${[0,1,2].map(i=>Math.round(f(s,TR+i))).join(', ')}</td><td>${risk(s).map(b=>`${badge(b.risk)} ${b.rem}d`).join(' &nbsp; ')}</td></tr>`).join('')}</table></div></div>`},
+sys(){const y=STORES.map((s,i)=>`${s}: ${SER.filter(x=>x.si==i).reduce((t,x)=>t+x.sales[TR-1],0)} units`).join('\n'),c=(t,l)=>`<div class="card"><h2>${t}</h2><pre>${l.length?esc(l.join('\n')):'No calls yet. Approve an action in Planner.'}</pre></div>`;
+ return`<div class="cols">${c('ERP (purchase orders, write-offs)',LOG.erp)}${c('WMS (transfers, donations)',LOG.wms)}${c('POS (price updates)',LOG.pos)}</div><div class="card"><h2>POS sales feed</h2><pre>GET /pos/sales?date=yesterday\n${y}</pre></div><div class="cols">${c('Decision log',LOG.dec)}${c('Feedback log',LOG.fb)}</div>`},
+ev(){const a=acc(),r={A:sim('A'),B:sim('B'),C:sim('C')},N={A:'Naive: last week\'s sales, no markdown',B:'Rule-based: 7-day average, 30% off at 2 days left',C:'Agentic POC: forecast with risk-based actions'},mx=Math.max(r.A.w,r.B.w,r.C.w,1);
+ return`<div class="card"><h2>Policy comparison on the ${DAYS-TR}-day holdout</h2><div class="sc"><table><tr><th>Policy</th><th>Waste (units)</th><th></th><th>Waste share</th><th>Service level</th><th>Gross margin</th></tr>${['A','B','C'].map(k=>{const t=r[k];return`<tr><td>${N[k]}</td><td>${Math.round(t.w)}</td><td style="width:140px"><div class="bar" style="width:${t.w/mx*130}px"></div></td><td>${(t.w/t.rcv*100).toFixed(1)}%</td><td>${(t.sold/t.dem*100).toFixed(1)}%</td><td>$${Math.round(t.gm)}</td></tr>`}).join('')}</table></div>
+ <p class="m">Forecast WAPE: naive ${(a.naive*100).toFixed(1)}%, 7-day average ${(a.ma7*100).toFixed(1)}%, model ${(a.model*100).toFixed(1)}%. Each policy runs FIFO stock with a 1-day order lead time and the same true demand. The agentic policy assumes every proposal is approved, and markdowns lift demand by 1.2 times the discount.</p>
+ <p class="m">Limits: one synthetic run, so read the gaps as relative behaviour, not field results. Re-run after changing Rules to see the trade-off between waste, service level and margin.</p></div>`},
+rul(){const F=[['riskTh','Spoilage risk threshold (%)',Math.round(CFG.riskTh*100),v=>v/100],['maxMd','Maximum markdown (%)',CFG.maxMd],['donDays','Donate when days left is at most',CFG.donDays],['minXfer','Minimum shortage to transfer (units)',CFG.minXfer],['cover','Reorder cover (days)',CFG.cover],['buf','Safety buffer (1.05 = 5%)',CFG.buf],['cap','Maximum order per SKU (units)',CFG.cap]];
+ return`<div class="card"><h2>Business rules</h2><p class="m">Changes re-run every agent. Rejected markdowns also raise the risk threshold by 2 points each time.</p><div class="grid">${F.map(x=>`<label>${x[1]}<input type="number" step="any" value="${x[2]}" onchange="setC('${x[0]}',${x[0]=='riskTh'?'this.value/100':'this.value'})"></label>`).join('')}</div></div>`}};
+function shell(){const T=[['inv','Perishables'],['plan','Planner'],['mod','Data and models'],['sys','ERP, WMS, POS'],['ev','Evaluation'],['rul','Rules']];
+ return`<header><b>FreshGuard</b><span class="m">${esc(USERS[me].n)}</span><button class="lnk" onclick="me=null;render()">Sign out</button></header><nav>${T.map(([k,l])=>`<button class="${tab==k?'on':''}" onclick="tab='${k}';render()">${l}</button>`).join('')}</nav><main>${V[tab]()}</main>`}
+function authV(){const up=authMode=='up';return`<div class="card auth"><h1>FreshGuard</h1><p class="m">Sign in to manage perishables and review waste actions.</p>${up?'<label>Shop name<input id="an"></label>':''}<label>Email<input id="ae" type="email" autocomplete="email"></label><label>Password<input id="ap" type="password" autocomplete="${up?'new-password':'current-password'}"></label>${up?'<label>Confirm password<input id="ac" type="password"></label>':''}<p class="err">${msg}</p><button class="pri" style="width:100%" onclick="auth()">${up?'Create account':'Sign in'}</button><p style="text-align:center"><button class="lnk" onclick="authMode='${up?'in':'up'}';msg='';render()">${up?'I already have an account':'Create a shop account'}</button></p><p class="m">Demo only: credentials are hashed and kept in this browser. Production needs server-side authentication.</p></div>`}
+function render(){$('#app').innerHTML=me?shell():authV()}
+render();
+</script></body></html>
